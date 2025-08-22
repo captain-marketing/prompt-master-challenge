@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Défi Prompt Master</title>
+  <meta name="description" content="Teste tes compétences en prompting avec le Défi Prompt Master, un jeu interactif pour apprendre à créer des prompts IA efficaces !">
+  <meta name="keywords" content="prompting, intelligence artificielle, jeu, marketing, workshop, apprentissage, IA">
+  <meta name="author" content="Stéphane Truphème, Bruno Fridlansky">
+  <meta name="robots" content="index, follow">
+  <meta name="og:title" content="Défi Prompt Master">
+  <meta name="og:description" content="Améliore tes compétences en prompting avec ce jeu ludique et éducatif. Inscris-toi au Workshop Prompting pour devenir un pro !">
+  <meta name="og:type" content="website">
+  <meta name="og:url" content="https://<ton-pseudo>.github.io/prompt-master-challenge">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+    <h1 class="text-3xl font-bold text-center mb-4 text-blue-600">Défi Prompt Master</h1>
+    <p class="text-center mb-6 text-gray-600">Teste tes compétences en prompting ! Écris un prompt pour le scénario donné, et reçois un score avec des conseils pour t'améliorer.</p>
+
+    <div id="scenario" class="bg-blue-50 p-4 rounded mb-4">
+      <h2 class="text-xl font-semibold mb-2">Scénario :</h2>
+      <p id="scenario-text" class="text-gray-700"></p>
+    </div>
+
+    <div class="mb-4">
+      <label for="prompt-input" class="block text-lg font-medium mb-2">Ton prompt :</label>
+      <textarea id="prompt-input" rows="5" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Écris ton prompt ici..."></textarea>
+    </div>
+
+    <div class="flex justify-between mb-4">
+      <button id="submit-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Valider</button>
+      <button id="next-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Nouveau scénario</button>
+    </div>
+
+    <div id="result" class="hidden bg-gray-50 p-4 rounded">
+      <h2 class="text-xl font-semibold mb-2">Ton résultat :</h2>
+      <p id="score" class="text-lg font-bold"></p>
+      <p id="feedback" class="text-gray-700"></p>
+      <div id="cta" class="mt-4 text-center">
+        <p class="text-blue-600 font-medium mb-2">Marre de prompter comme un pied 🦶 Participe au Workshop Prompting pour gagner (enfin !) en productivité.</p>
+        <a href="https://link.captainmarketing.io/workshop-prompt?utm_source=prompt_game&utm_medium=github_pages&utm_campaign=workshop" target="_blank" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 inline-block">Inscris-toi ici 👉</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scenarios = [
+      {
+        text: "Tu veux une explication sur le fonctionnement d'une intelligence artificielle pour un public de lycéens. Écris un prompt pour obtenir une réponse claire et adaptée.",
+        criteria: {
+          clarity: { weight: 30, description: "Ton prompt demande-t-il une explication claire et simple ?" },
+          context: { weight: 30, description: "Ton prompt précise-t-il le public cible (lycéens) ?" },
+          constraints: { weight: 20, description: "Ton prompt inclut-il des limites, comme éviter le jargon ?" },
+          format: { weight: 20, description: "Ton prompt spécifie-t-il un format (ex. : paragraphe, liste) ?" }
+        }
+      },
+      {
+        text: "Tu cherches des idées de cadeaux pour un ami passionné de technologie, avec un budget de 50 €. Écris un prompt pour obtenir des suggestions pertinentes.",
+        criteria: {
+          clarity: { weight: 25, description: "Ton prompt est-il précis sur le type d’idées demandées ?" },
+          context: { weight: 25, description: "Ton prompt mentionne-t-il la passion pour la technologie ?" },
+          constraints: { weight: 30, description: "Ton prompt inclut-il le budget de 50 € ?" },
+          format: { weight: 20, description: "Ton prompt demande-t-il un format spécifique (ex. : liste) ?" }
+        }
+      },
+      {
+        text: "Tu veux un résumé des impacts du changement climatique sur les océans, en 200 mots maximum. Écris un prompt pour obtenir une réponse concise.",
+        criteria: {
+          clarity: { weight: 25, description: "Ton prompt est-il clair sur le sujet (impacts sur les océans) ?" },
+          context: { weight: 20, description: "Ton prompt précise-t-il le sujet du changement climatique ?" },
+          constraints: { weight: 35, description: "Ton prompt mentionne-t-il la limite de 200 mots ?" },
+          format: { weight: 20, description: "Ton prompt demande-t-il un résumé ?" }
+        }
+      }
+    ];
+
+    let currentScenarioIndex = 0;
+
+    function displayScenario() {
+      const scenarioText = document.getElementById('scenario-text');
+      scenarioText.textContent = scenarios[currentScenarioIndex].text;
+      document.getElementById('prompt-input').value = '';
+      document.getElementById('result').classList.add('hidden');
+    }
+
+    function evaluatePrompt(prompt) {
+      const scenario = scenarios[currentScenarioIndex];
+      let score = 0;
+      let feedback = [];
+
+      // Évaluation de la clarté
+      if (prompt.length > 10 && !prompt.includes('?')) {
+        score += scenario.criteria.clarity.weight * 0.5;
+        feedback.push("⚠️ Ton prompt manque peut-être de clarté. Essaye d'utiliser une question ou une instruction directe.");
+      } else if (prompt.length > 10) {
+        score += scenario.criteria.clarity.weight;
+      } else {
+        feedback.push("⚠️ Ton prompt est trop court pour être clair. Ajoute plus de détails.");
+      }
+
+      // Évaluation du contexte
+      const contextKeywords = scenario.text.toLowerCase().split(' ').filter(word => word.length > 4);
+      const contextMatch = contextKeywords.some(keyword => prompt.toLowerCase().includes(keyword));
+      if (contextMatch) {
+        score += scenario.criteria.context.weight;
+      } else {
+        feedback.push(`⚠️ Ton prompt manque de contexte. Inclue des éléments comme "${contextKeywords[0]}" ou "${contextKeywords[1]}".`);
+      }
+
+      // Évaluation des contraintes
+      const hasConstraints = prompt.toLowerCase().includes('maximum') || prompt.toLowerCase().includes('sans') || prompt.match(/\d+\s*(mots|€)/);
+      if (hasConstraints) {
+        score += scenario.criteria.constraints.weight;
+      } else {
+        feedback.push("⚠️ Ton prompt manque de contraintes. Précise des limites, comme une longueur ou un budget.");
+      }
+
+      // Évaluation du format
+      const hasFormat = prompt.toLowerCase().includes('liste') || prompt.toLowerCase().includes('paragraphe') || prompt.toLowerCase().includes('tableau') || prompt.toLowerCase().includes('résumé');
+      if (hasFormat) {
+        score += scenario.criteria.format.weight;
+      } else {
+        feedback.push("⚠️ Ton prompt ne précise pas de format. Demande une liste, un paragraphe, etc.");
+      }
+
+      return { score: Math.min(100, Math.round(score)), feedback };
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', () => {
+      const prompt = document.getElementById('prompt-input').value.trim();
+      if (!prompt) {
+        alert('Entre un prompt, voyons !');
+        return;
+      }
+
+      const { score, feedback } = evaluatePrompt(prompt);
+      document.getElementById('score').textContent = `Score : ${score}/100`;
+      document.getElementById('feedback').innerHTML = feedback.length > 0 ? feedback.join('<br>') : 'Super prompt ! Continue comme ça !';
+      document.getElementById('result').classList.remove('hidden');
+    });
+
+    document.getElementById('next-btn').addEventListener('click', () => {
+      currentScenarioIndex = (currentScenarioIndex + 1) % scenarios.length;
+      displayScenario();
+    });
+
+    // Afficher le premier scénario au chargement
+    displayScenario();
+  </script>
+</body>
+</html>
